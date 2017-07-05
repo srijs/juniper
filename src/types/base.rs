@@ -280,7 +280,7 @@ pub trait GraphQLType: Sized {
         if let Some(selection_set) = selection_set {
             let mut result = HashMap::new();
             resolve_selection_set_into(self, selection_set, executor, &mut result);
-            Value::object(result)
+            Value::Object(result)
         }
         else {
             panic!("resolve() must be implemented by non-object output types");
