@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::RwLock;
 
+use fnv::FnvHashMap;
+
 use ::GraphQLError;
 use ast::{InputValue, ToInputValue, Document, Selection, Fragment, Definition, Type, FromInputValue, OperationType};
 use value::Value;
@@ -21,7 +23,7 @@ use types::base::GraphQLType;
 /// into `Type` instances and automatically registers them.
 pub struct Registry<'r> {
     /// Currently registered types
-    pub types: HashMap<String, MetaType<'r>>,
+    pub types: FnvHashMap<String, MetaType<'r>>,
 }
 
 #[derive(Clone)]
@@ -377,7 +379,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
 
 impl<'r> Registry<'r> {
     /// Construct a new registry
-    pub fn new(types: HashMap<String, MetaType<'r>>) -> Registry<'r> {
+    pub fn new(types: FnvHashMap<String, MetaType<'r>>) -> Registry<'r> {
         Registry {
             types: types,
         }

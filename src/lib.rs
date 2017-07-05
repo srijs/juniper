@@ -198,6 +198,7 @@ built-in [GraphiQL][6] handler included.
 #[cfg(feature="iron-handlers")] #[macro_use(itry)] extern crate iron;
 #[cfg(feature="iron-handlers")] extern crate urlencoded;
 #[cfg(test)] extern crate iron_test;
+extern crate fnv;
 extern crate serde;
 #[macro_use] extern crate serde_derive;
 

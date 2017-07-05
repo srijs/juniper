@@ -37,6 +37,7 @@ rocket-handlers = ["rocket", "rocket_codegen", "serde_json"]
 expose-test-schema = []
 
 [dependencies]
+fnv = "1.0.3"
 serde = { version = "^1.0.8" }
 serde_derive = {version="^1.0.8" }
 
