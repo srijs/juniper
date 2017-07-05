@@ -50,9 +50,11 @@ impl Value {
     pub fn object<K>(o: HashMap<K, Value>) -> Value
         where K: Into<String> + Eq + Hash
     {
-        Value::Object(
-            o.into_iter().map(|(k, v)| (k.into(), v)).collect()
-        )
+        let mut map = HashMap::with_capacity(o.len());
+        for (k, v) in o.into_iter() {
+            map.insert(k.into(), v);
+        }
+        Value::Object(map)
     }
 
     // DISCRIMINATORS
