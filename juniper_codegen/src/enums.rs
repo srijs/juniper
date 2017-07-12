@@ -140,19 +140,20 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
     quote! {
         impl ::juniper::GraphQLType for #ident {
             type Context = ();
+            type TypeInfo = ();
 
-            fn name() -> Option<&'static str> {
+            fn name(_: &()) -> Option<&'static str> {
                 Some(#name)
             }
 
-            fn meta<'r>(registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
                 registry.build_enum_type::<#ident>(&[
                     #(#values)*
                 ])
                 .into_meta()
             }
 
-            fn resolve(&self, _: Option<&[::juniper::Selection]>, _: &::juniper::Executor<Self::Context>) -> ::juniper::Value {
+            fn resolve(&self, _: &(), _: Option<&[::juniper::Selection]>, _: &::juniper::Executor<Self::Context>) -> ::juniper::Value {
                 match self {
                     #(#resolves)*
                 }

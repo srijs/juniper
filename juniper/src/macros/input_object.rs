@@ -239,12 +239,13 @@ macro_rules! graphql_input_object {
 
         impl $crate::GraphQLType for $name {
             type Context = ();
+            type TypeInfo = ();
 
-            fn name() -> Option<&'static str> {
+            fn name(_: &()) -> Option<&str> {
                 Some($outname)
             }
 
-            fn meta<'r>(registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
                 let fields = graphql_input_object!(@generate_meta_fields, registry, $fields);
                 graphql_input_object!(
                     @maybe_apply, $descr, description,

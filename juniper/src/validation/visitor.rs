@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use ast::{Definition, Document, Fragment, VariableDefinitions, Type, InputValue,
           Directive, Arguments, Selection, Field, FragmentSpread, InlineFragment,
           Operation, OperationType};
@@ -17,14 +19,14 @@ fn visit_definitions<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'
         let def_type = match *def {
                 Definition::Fragment(Spanning {
                         item: Fragment { type_condition: Spanning { item: name, .. }, .. }, .. }) =>
-                    Some(Type::NonNullNamed(name)),
+                    Some(Type::NonNullNamed(Cow::Borrowed(name))),
                 Definition::Operation(Spanning {
                         item: Operation { operation_type: OperationType::Query, .. }, .. }) =>
-                    Some(Type::NonNullNamed(ctx.schema.concrete_query_type().name().unwrap())),
+                    Some(Type::NonNullNamed(Cow::Borrowed(ctx.schema.concrete_query_type().name().unwrap()))),
                 Definition::Operation(Spanning {
                         item: Operation { operation_type: OperationType::Mutation, .. }, .. }) =>
                     ctx.schema.concrete_mutation_type()
-                        .map(|t| Type::NonNullNamed(t.name().unwrap())),
+                        .map(|t| Type::NonNullNamed(Cow::Borrowed(t.name().unwrap()))),
             };
 
         ctx.with_pushed_type(def_type.as_ref(), |ctx| {
@@ -171,7 +173,7 @@ fn visit_inline_fragment<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorConte
     };
 
     if let Some(Spanning { item: type_name, .. }) = fragment.item.type_condition {
-        ctx.with_pushed_type(Some(&Type::NonNullNamed(type_name)), visit_fn);
+        ctx.with_pushed_type(Some(&Type::NonNullNamed(Cow::Borrowed(type_name))), visit_fn);
     }
     else {
         visit_fn(ctx);
@@ -186,7 +188,7 @@ fn visit_input_value<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'
             for field in fields {
                 let inner_type = ctx.current_input_type_literal()
                     .and_then(|t| match *t {
-                        Type::NonNullNamed(name) | Type::Named(name) =>
+                        Type::NonNullNamed(ref name) | Type::Named(ref name) =>
                             ctx.schema.concrete_type_by_name(name),
                         _ => None,
                     })

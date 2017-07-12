@@ -53,12 +53,13 @@ struct ComplexInput {
 
 impl GraphQLType for Being {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("Being")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields =&[
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
@@ -71,12 +72,13 @@ impl GraphQLType for Being {
 
 impl GraphQLType for Pet {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("Pet")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
@@ -89,12 +91,13 @@ impl GraphQLType for Pet {
 
 impl GraphQLType for Canine {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("Canine")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
@@ -107,12 +110,13 @@ impl GraphQLType for Canine {
 
 impl GraphQLType for DogCommand {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("DogCommand")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_enum_type::<Self>(&[
             EnumValue::new("SIT"),
             EnumValue::new("HEEL"),
@@ -134,12 +138,13 @@ impl FromInputValue for DogCommand {
 
 impl GraphQLType for Dog {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("Dog")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
@@ -167,12 +172,13 @@ impl GraphQLType for Dog {
 
 impl GraphQLType for FurColor {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("FurColor")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_enum_type::<Self>(&[
             EnumValue::new("BROWN"),
             EnumValue::new("BLACK"),
@@ -197,12 +203,13 @@ impl FromInputValue for FurColor {
 
 impl GraphQLType for Cat {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("Cat")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
@@ -223,12 +230,13 @@ impl GraphQLType for Cat {
 
 impl GraphQLType for CatOrDog {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("CatOrDog")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let types = &[
             registry.get_type::<Cat>(),
             registry.get_type::<Dog>(),
@@ -241,12 +249,13 @@ impl GraphQLType for CatOrDog {
 
 impl GraphQLType for Intelligent {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("Intelligent")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<i32>>("iq"),
         ];
@@ -258,12 +267,13 @@ impl GraphQLType for Intelligent {
 
 impl GraphQLType for Human {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("Human")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
@@ -282,12 +292,13 @@ impl GraphQLType for Human {
 
 impl GraphQLType for Alien {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("Alien")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
@@ -306,12 +317,13 @@ impl GraphQLType for Alien {
 
 impl GraphQLType for DogOrHuman {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("DogOrHuman")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let types = &[
             registry.get_type::<Dog>(),
             registry.get_type::<Human>(),
@@ -324,12 +336,13 @@ impl GraphQLType for DogOrHuman {
 
 impl GraphQLType for HumanOrAlien {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("HumanOrAlien")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let types = &[
             registry.get_type::<Human>(),
             registry.get_type::<Alien>(),
@@ -342,12 +355,13 @@ impl GraphQLType for HumanOrAlien {
 
 impl GraphQLType for ComplexInput {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("ComplexInput")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.arg::<bool>("requiredField"),
             registry.arg::<Option<i32>>("intField"),
@@ -383,12 +397,13 @@ impl FromInputValue for ComplexInput {
 
 impl GraphQLType for ComplicatedArgs {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("ComplicatedArgs")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<String>>("intArgField")
                 .argument(registry.arg::<Option<i32>>("intArg")),
@@ -428,12 +443,13 @@ impl GraphQLType for ComplicatedArgs {
 
 impl GraphQLType for QueryRoot {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("QueryRoot")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<Human>>("human")
                 .argument(registry.arg::<Option<ID>>("id")),
@@ -454,7 +470,7 @@ impl GraphQLType for QueryRoot {
 
 pub fn validate<'a, R, V, F>(r: R, q: &'a str, factory: F)
     -> Vec<RuleError>
-    where R: GraphQLType,
+    where R: GraphQLType<TypeInfo=()>,
           V: Visitor<'a> + 'a,
           F: Fn() -> V
 {
@@ -487,7 +503,7 @@ pub fn expect_passes_rule<'a, V, F>(factory: F, q: &'a str)
 }
 
 pub fn expect_passes_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &'a str)
-    where R: GraphQLType,
+    where R: GraphQLType<TypeInfo=()>,
           V: Visitor<'a> + 'a,
           F: Fn() -> V
 {
@@ -507,7 +523,7 @@ pub fn expect_fails_rule<'a, V, F>(factory: F, q: &'a str, expected_errors: &[Ru
 }
 
 pub fn expect_fails_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &'a str, expected_errors: &[RuleError])
-    where R: GraphQLType,
+    where R: GraphQLType<TypeInfo=()>,
           V: Visitor<'a> + 'a,
           F: Fn() -> V
 {

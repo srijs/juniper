@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use ast::{Definition, Document, OperationType,
           VariableDefinitions, VariableDefinition, InputValue,
           Operation, Fragment, Selection, Directive, Field, Arguments,
@@ -330,7 +332,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Type<'a>> {
             Type::List(Box::new(inner_type.item)))
     }
     else {
-        try!(parser.expect_name()).map(Type::Named)
+        try!(parser.expect_name()).map(|s| Type::Named(Cow::Borrowed(s)))
     };
 
     Ok(match *parser.peek() {

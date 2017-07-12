@@ -174,12 +174,13 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
     quote! {
         impl ::juniper::GraphQLType for #ident {
             type Context = ();
+            type TypeInfo = ();
 
-            fn name() -> Option<&'static str> {
+            fn name(_: &()) -> Option<&'static str> {
                 Some(#name)
             }
 
-            fn meta<'r>(registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
                 let fields = &[
                     #(#meta_fields)*
                 ];

@@ -42,72 +42,76 @@ macro_rules! __graphql__args {
             .expect("Argument missing - validation must have failed");
     };
 
-    ( @apply_args, $reg:expr, $base:expr, ( ) ) => {
+    ( @apply_args, $reg:expr, $base:expr, $info:expr, ( ) ) => {
         $base
     };
 
     (
         @apply_args,
-        $reg:expr, $base:expr, ( , $( $rest:tt )* )
+        $reg:expr, $base:expr, $info:expr, ( , $( $rest:tt )* )
     ) => {
         __graphql__args!(
             @apply_args,
             $reg,
             $base,
+            $info,
             ( $($rest)* ))
     };
 
     (
         @apply_args,
-        $reg:expr, $base:expr, ( &executor $( $rest:tt )* )
+        $reg:expr, $base:expr, $info:expr, ( &executor $( $rest:tt )* )
     ) => {
         __graphql__args!(
             @apply_args,
             $reg,
             $base,
+            $info,
             ( $($rest)* ))
     };
 
     (
         @apply_args,
-        $reg:expr, $base:expr, ( $name:ident = $default:tt : $t:ty )
+        $reg:expr, $base:expr, $info:expr, ( $name:ident = $default:tt : $t:ty )
     ) => {
-        $base.argument($reg.arg_with_default::<$t>(
+        $base.argument($reg.arg_with_default_with_info::<$t>(
             &$crate::to_camel_case(stringify!($name)),
-            &__graphql__args!(@as_expr, $default)))
+            &__graphql__args!(@as_expr, $default), $info))
     };
 
     (
         @apply_args,
-        $reg:expr, $base:expr, ( $name:ident = $default:tt : $t:ty , $( $rest:tt )* )
+        $reg:expr, $base:expr, $info:expr, ( $name:ident = $default:tt : $t:ty , $( $rest:tt )* )
     ) => {
         __graphql__args!(
             @apply_args,
             $reg,
-            $base.argument($reg.arg_with_default::<$t>(
+            $base.argument($reg.arg_with_default_with_info::<$t>(
                 &$crate::to_camel_case(stringify!($name)),
-                &__graphql__args!(@as_expr, $default))),
+                &__graphql__args!(@as_expr, $default), $info)),
+            $info,
             ( $($rest)* ))
     };
 
     (
         @apply_args,
-        $reg:expr, $base:expr,
+        $reg:expr, $base:expr, $info:expr,
         ( $name:ident = $default:tt : $t:ty as $desc:tt $( $rest:tt )* )
     ) => {
         __graphql__args!(
             @apply_args,
             $reg,
-            $base.argument($reg.arg_with_default::<$t>(
+            $base.argument($reg.arg_with_default_with_info::<$t>(
                 &$crate::to_camel_case(stringify!($name)),
-                &__graphql__args!(@as_expr, $default))
+                &__graphql__args!(@as_expr, $default), $info)
                 .description($desc)),
+            $info,
             ( $($rest)* ))
     };
 
     (
         @apply_args,
-        $reg:expr, $base:expr, ( $name:ident : $t:ty )
+        $reg:expr, $base:expr, $info:expr, ( $name:ident : $t:ty )
     ) => {
         $base.argument($reg.arg::<$t>(
             &$crate::to_camel_case(stringify!($name))))
@@ -115,19 +119,20 @@ macro_rules! __graphql__args {
 
     (
         @apply_args,
-        $reg:expr, $base:expr, ( $name:ident : $t:ty , $( $rest:tt )* )
+        $reg:expr, $base:expr, $info:expr, ( $name:ident : $t:ty , $( $rest:tt )* )
     ) => {
         __graphql__args!(
             @apply_args,
             $reg,
             $base.argument($reg.arg::<$t>(
                 &$crate::to_camel_case(stringify!($name)))),
+            $info,
             ( $($rest)* ))
     };
 
     (
         @apply_args,
-        $reg:expr, $base:expr, ( $name:ident : $t:ty as $desc:tt $( $rest:tt )* )
+        $reg:expr, $base:expr, $info:expr, ( $name:ident : $t:ty as $desc:tt $( $rest:tt )* )
     ) => {
         __graphql__args!(
             @apply_args,
@@ -136,6 +141,7 @@ macro_rules! __graphql__args {
                 $reg.arg::<$t>(
                     &$crate::to_camel_case(stringify!($name)))
                 .description($desc)),
+            $info,
             ( $($rest)* ))
     };
 }

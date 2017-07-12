@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::RwLock;
 
@@ -144,24 +145,24 @@ impl<T> FromContext<T> for T where T: Context {
 impl<'a, CtxT> Executor<'a, CtxT> {
     /// Resolve a single arbitrary value, mapping the context to a new type
     pub fn resolve_with_ctx<NewCtxT, T: GraphQLType<Context=NewCtxT>>(
-        &self, value: &T
+        &self, info: &T::TypeInfo, value: &T
     ) -> ExecutionResult
         where NewCtxT: FromContext<CtxT>,
     {
         self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
-            .resolve(value)
+            .resolve(info, value)
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
-    pub fn resolve<T: GraphQLType<Context=CtxT>>(&self, value: &T) -> ExecutionResult {
-        Ok(value.resolve(self.current_selection_set, self))
+    pub fn resolve<T: GraphQLType<Context=CtxT>>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult {
+        Ok(value.resolve(info, self.current_selection_set, self))
     }
 
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    pub fn resolve_into_value<T: GraphQLType<Context=CtxT>>(&self, value: &T) -> Value {
-        match self.resolve(value) {
+    pub fn resolve_into_value<T: GraphQLType<Context=CtxT>>(&self, info: &T::TypeInfo, value: &T) -> Value {
+        match self.resolve(info, value) {
             Ok(v) => v,
             Err(e) => {
                 let position = self.field_path.location().clone();
@@ -364,8 +365,8 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
         };
 
         value = match op.item.operation_type {
-            OperationType::Query => executor.resolve_into_value(&root_node),
-            OperationType::Mutation => executor.resolve_into_value(&root_node.mutation_type),
+            OperationType::Query => executor.resolve_into_value(&root_node.query_info, &root_node),
+            OperationType::Mutation => executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type),
         };
     }
 
@@ -387,47 +388,75 @@ impl<'r> Registry<'r> {
     ///
     /// If the registry hasn't seen a type with this name before, it will
     /// construct its metadata and store it.
-    pub fn get_type<T>(&mut self) -> Type<'r> where T: GraphQLType {
-        if let Some(name) = T::name() {
-            if !self.types.contains_key(name) {
-                self.insert_placeholder(name, Type::NonNullNamed(name));
-                let meta = T::meta(self);
-                self.types.insert(name.to_owned(), meta);
+    pub fn get_type<T>(&mut self) -> Type<'r> where T: GraphQLType<TypeInfo=()> {
+        self.get_type_with_info::<T>(&())
+    }
+
+    /// Get the `Type` instance for a given GraphQL type,
+    /// by providing a type info object.
+    ///
+    /// If the registry hasn't seen a type with this name before, it will
+    /// construct its metadata and store it.
+    pub fn get_type_with_info<T>(&mut self, info: &T::TypeInfo) -> Type<'r> where T: GraphQLType {
+        if let Some(name) = T::name(info) {
+            if !self.types.contains_key(&name.to_string()) {
+                self.insert_placeholder(&name, Type::NonNullNamed(Cow::Owned(name.to_string())));
+                let meta = T::meta(info, self);
+                self.types.insert(name.to_string(), meta);
             }
-            self.types[name].as_type()
+            self.types[&name.to_string()].as_type()
         }
         else {
-            T::meta(self).as_type()
+            T::meta(info, self).as_type()
         }
     }
 
     /// Create a field with the provided name
-    pub fn field<T>(&mut self, name: &str) -> Field<'r> where T: GraphQLType {
+    pub fn field<T>(&mut self, name: &str) -> Field<'r> where T: GraphQLType<TypeInfo=()> {
+        self.field_with_info::<T>(name, &())
+    }
+
+    /// Create a field with the provided name,
+    /// by providing a type info object.
+    pub fn field_with_info<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r> where T: GraphQLType {
         Field {
             name: name.to_owned(),
             description: None,
             arguments: None,
-            field_type: self.get_type::<T>(),
+            field_type: self.get_type_with_info::<T>(info),
             deprecation_reason: None,
         }
     }
 
     #[doc(hidden)]
     pub fn field_convert<'a, T: IntoResolvable<'a, I, C>, I, C>(&mut self, name: &str) -> Field<'r>
+        where I: GraphQLType<TypeInfo=()>
+    {
+        self.field_convert_with_info::<'a, T, I, C>(name, &())
+    }
+
+    #[doc(hidden)]
+    pub fn field_convert_with_info<'a, T: IntoResolvable<'a, I, C>, I, C>(&mut self, name: &str, info: &I::TypeInfo) -> Field<'r>
         where I: GraphQLType
     {
         Field {
             name: name.to_owned(),
             description: None,
             arguments: None,
-            field_type: self.get_type::<I>(),
+            field_type: self.get_type_with_info::<I>(info),
             deprecation_reason: None,
         }
     }
 
     /// Create an argument with the provided name
-    pub fn arg<T>(&mut self, name: &str) -> Argument<'r> where T: GraphQLType + FromInputValue {
-        Argument::new(name, self.get_type::<T>())
+    pub fn arg<T>(&mut self, name: &str) -> Argument<'r> where T: GraphQLType<TypeInfo=()> + FromInputValue {
+        self.arg_with_info::<T>(name, &())
+    }
+
+    /// Create an argument with the provided name,
+    /// by providing a type info object.
+    pub fn arg_with_info<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r> where T: GraphQLType + FromInputValue {
+        Argument::new(name, self.get_type_with_info::<T>(info))
     }
 
     /// Create an argument with a default value
@@ -437,12 +466,29 @@ impl<'r> Registry<'r> {
     pub fn arg_with_default<T>(
         &mut self,
         name: &str,
+        value: &T
+    )
+        -> Argument<'r>
+        where T: GraphQLType<TypeInfo=()> + ToInputValue + FromInputValue
+    {
+        self.arg_with_default_with_info(name, value, &())
+    }
+
+    /// Create an argument with a default value,
+    /// by providing a type info object.
+    ///
+    /// When called with type `T`, the actual argument will be given the type
+    /// `Option<T>`.
+     pub fn arg_with_default_with_info<T>(
+        &mut self,
+        name: &str,
         value: &T,
+        info: &T::TypeInfo
     )
         -> Argument<'r>
         where T: GraphQLType + ToInputValue + FromInputValue
     {
-        Argument::new(name, self.get_type::<Option<T>>())
+        Argument::new(name, self.get_type_with_info::<Option<T>>(info))
             .default_value(value.to())
     }
 
@@ -457,22 +503,22 @@ impl<'r> Registry<'r> {
     /// Create a scalar meta type
     ///
     /// This expects the type to implement `FromInputValue`.
-    pub fn build_scalar_type<T>(&mut self) -> ScalarMeta<'r>
+    pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r>
         where T: FromInputValue + GraphQLType
     {
-        let name = T::name().expect("Scalar types must be named. Implement name()");
-        ScalarMeta::new::<T>(name)
+        let name = T::name(info).expect("Scalar types must be named. Implement name()");
+        ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
     /// Create a list meta type
-    pub fn build_list_type<T: GraphQLType>(&mut self) -> ListMeta<'r> {
-        let of_type = self.get_type::<T>();
+    pub fn build_list_type<T: GraphQLType>(&mut self, info: &T::TypeInfo) -> ListMeta<'r> {
+        let of_type = self.get_type_with_info::<T>(info);
         ListMeta::new(of_type)
     }
 
     /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLType>(&mut self) -> NullableMeta<'r> {
-        let of_type = self.get_type::<T>();
+    pub fn build_nullable_type<T: GraphQLType>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r> {
+        let of_type = self.get_type_with_info::<T>(info);
         NullableMeta::new(of_type)
     }
 
@@ -481,50 +527,93 @@ impl<'r> Registry<'r> {
     /// To prevent infinite recursion by enforcing ordering, this returns a
     /// function that needs to be called with the list of fields on the object.
     pub fn build_object_type<T>(&mut self, fields: &[Field<'r>]) -> ObjectMeta<'r>
+        where T: GraphQLType<TypeInfo=()>
+    {
+        self.build_object_type_with_info::<T>(&(), fields)
+    }
+
+    /// Create an object meta type builder,
+    /// by providing a type info object.
+    ///
+    /// To prevent infinite recursion by enforcing ordering, this returns a
+    /// function that needs to be called with the list of fields on the object.
+    pub fn build_object_type_with_info<T>(&mut self, info: &T::TypeInfo, fields: &[Field<'r>]) -> ObjectMeta<'r>
         where T: GraphQLType
     {
-        let name = T::name().expect("Object types must be named. Implement name()");
+        let name = T::name(info).expect("Object types must be named. Implement name()");
 
         let mut v = fields.to_vec();
         v.push(self.field::<String>("__typename"));
-        ObjectMeta::new(name, &v)
+        ObjectMeta::new(Cow::Owned(name.to_string()), &v)
     }
 
     /// Create an enum meta type
     pub fn build_enum_type<T>(&mut self, values: &[EnumValue]) -> EnumMeta<'r>
+        where T: FromInputValue + GraphQLType<TypeInfo=()>
+    {
+        self.build_enum_type_with_info::<T>(&(), values)
+    }
+
+    /// Create an enum meta type,
+    /// by providing a type info object.
+    pub fn build_enum_type_with_info<T>(&mut self, info: &T::TypeInfo, values: &[EnumValue]) -> EnumMeta<'r>
         where T: FromInputValue + GraphQLType
     {
-        let name = T::name().expect("Enum types must be named. Implement name()");
+        let name = T::name(info).expect("Enum types must be named. Implement name()");
 
-        EnumMeta::new::<T>(name, values)
+        EnumMeta::new::<T>(Cow::Owned(name.to_string()), values)
     }
 
     /// Create an interface meta type builder
     pub fn build_interface_type<T>(&mut self, fields: &[Field<'r>]) -> InterfaceMeta<'r>
+        where T: GraphQLType<TypeInfo=()>
+    {
+        self.build_interface_type_with_info::<T>(&(), fields)
+    }
+
+    /// Create an interface meta type builder,
+    /// by providing a type info object.
+    pub fn build_interface_type_with_info<T>(&mut self, info: &T::TypeInfo, fields: &[Field<'r>]) -> InterfaceMeta<'r>
         where T: GraphQLType
     {
-        let name = T::name().expect("Interface types must be named. Implement name()");
+        let name = T::name(info).expect("Interface types must be named. Implement name()");
 
         let mut v = fields.to_vec();
         v.push(self.field::<String>("__typename"));
-        InterfaceMeta::new(name, &v)
+        InterfaceMeta::new(Cow::Owned(name.to_string()), &v)
     }
 
     /// Create a union meta type builder
     pub fn build_union_type<T>(&mut self, types: &[Type<'r>]) -> UnionMeta<'r>
+        where T: GraphQLType<TypeInfo=()>
+    {
+        self.build_union_type_with_info::<T>(&(), types)
+    }
+
+    /// Create a union meta type builder,
+    /// by providing a type info object.
+    pub fn build_union_type_with_info<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
         where T: GraphQLType
     {
-        let name = T::name().expect("Union types must be named. Implement name()");
+        let name = T::name(info).expect("Union types must be named. Implement name()");
 
-        UnionMeta::new(name, types)
+        UnionMeta::new(Cow::Owned(name.to_string()), types)
     }
 
     /// Create an input object meta type builder
     pub fn build_input_object_type<T>(&mut self, args: &[Argument<'r>]) -> InputObjectMeta<'r>
+        where T: FromInputValue + GraphQLType<TypeInfo=()>
+    {
+        self.build_input_object_type_with_info::<T>(&(), args)
+    }
+
+    /// Create an input object meta type builder,
+    /// by providing a type info object.
+    pub fn build_input_object_type_with_info<T>(&mut self, info: &T::TypeInfo, args: &[Argument<'r>]) -> InputObjectMeta<'r>
         where T: FromInputValue + GraphQLType
     {
-        let name = T::name().expect("Input object types must be named. Implement name()");
+        let name = T::name(info).expect("Input object types must be named. Implement name()");
 
-        InputObjectMeta::new::<T>(name, args)
+        InputObjectMeta::new::<T>(Cow::Owned(name.to_string()), args)
     }
 }

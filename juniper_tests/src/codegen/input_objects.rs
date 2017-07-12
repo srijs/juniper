@@ -10,7 +10,7 @@ struct Input {
 
 #[test]
 fn test_derived_input_object() {
-  assert_eq!(Input::name(), Some("MyInput"));
+  assert_eq!(Input::name(&()), Some("MyInput"));
 
   let obj = Input {
     regular_field: "a".to_string(),

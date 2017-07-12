@@ -35,6 +35,8 @@ pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
           CtxT: 'static,
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
           Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
+          Query::TypeInfo: Send + Sync,
+          Mutation::TypeInfo: Send + Sync
 {
     context_factory: CtxFactory,
     root_node: RootNode<'a, Query, Mutation>,
@@ -82,6 +84,8 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
           CtxT: 'static,
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
           Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
+          Query::TypeInfo: Send + Sync,
+          Mutation::TypeInfo: Send + Sync
 {
     /// Build a new GraphQL handler
     ///
@@ -89,13 +93,23 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
     /// expected to construct a context object for the given schema. This can
     /// be used to construct e.g. database connections or similar data that
     /// the schema needs to execute the query.
-    pub fn new(context_factory: CtxFactory, query: Query, mutation: Mutation) -> Self {
+    pub fn new(context_factory: CtxFactory, query: Query, mutation: Mutation) -> Self
+        where Query: GraphQLType<TypeInfo=()>,
+              Mutation: GraphQLType<TypeInfo=()>
+    {
         GraphQLHandler {
             context_factory: context_factory,
             root_node: RootNode::new(query, mutation),
         }
     }
 
+    /// Build a new GraphQL handler, providing type info objects
+    pub fn new_with_info(context_factory: CtxFactory, query: Query, mutation: Mutation, query_info: Query::TypeInfo, mutation_info: Mutation::TypeInfo) -> Self {
+        GraphQLHandler {
+            context_factory: context_factory,
+            root_node: RootNode::new_with_info(query, mutation, query_info, mutation_info),
+        }
+    }
 
     fn handle_get(&self, req: &mut Request) -> IronResult<http::GraphQLRequest> {
         let url_query_string = req.get_mut::<UrlEncodedQuery>()
@@ -148,6 +162,8 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
           CtxT: 'static,
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
           Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static, 'a: 'static,
+          Query::TypeInfo: Send + Sync,
+          Mutation::TypeInfo: Send + Sync
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
         let context = (self.context_factory)(req);

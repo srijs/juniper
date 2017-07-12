@@ -18,11 +18,11 @@ enum SomeEnum {
 #[test]
 fn test_derived_enum() {
   // Ensure that rename works.
-  assert_eq!(SomeEnum::name(), Some("Some"));
+  assert_eq!(SomeEnum::name(&()), Some("Some"));
 
   // Ensure validity of meta info.
   let mut registry = juniper::Registry::new(HashMap::new());
-  let meta = SomeEnum::meta(&mut registry);
+  let meta = SomeEnum::meta(&(), &mut registry);
 
   // Test Regular variant.
   assert_eq!(

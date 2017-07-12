@@ -49,7 +49,7 @@ impl<'a> VariableInAllowedPosition<'a> {
                 {
                     let expected_type = match (&var_def.default_value, &var_def.var_type.item) {
                         (&Some(_), &Type::List(ref inner)) => Type::NonNullList(inner.clone()),
-                        (&Some(_), &Type::Named(inner)) => Type::NonNullNamed(inner),
+                        (&Some(_), &Type::Named(ref inner)) => Type::NonNullNamed(inner.clone()),
                         (_, t) => t.clone(),
                     };
 
